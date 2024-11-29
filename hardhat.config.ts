@@ -1,8 +1,11 @@
 import path from 'path'
-import fs from 'fs'
+import "dotenv/config";
 
+require("dotenv").config({ path: require("find-config")(".env") });
+const fs = require("fs");
 import * as dotenv from 'dotenv'
 import readlineSync from 'readline-sync'
+import type { NetworkUserConfig } from "hardhat/types";
 
 import 'hardhat-deploy'
 import '@nomicfoundation/hardhat-viem'
@@ -11,12 +14,29 @@ import '@nomicfoundation/hardhat-verify'
 import 'hardhat-gas-reporter'
 import 'hardhat-contract-sizer'
 import 'hardhat-abi-exporter'
+import '@nomiclabs/hardhat-waffle'
+import '@openzeppelin/hardhat-upgrades'
+
 
 import { HardhatConfig } from 'hardhat/types'
 import * as networkInfos from 'viem/chains'
 
 dotenv.config()
-
+const mantleSepoliaTestnet: NetworkUserConfig = {
+  url: "https://rpc.sepolia.mantle.xyz",
+  chainId: 5003,
+  accounts: [process.env.KEY_TESTNET!],
+};
+const arbitrumSepolia: NetworkUserConfig = {
+  url: "https://arbitrum-sepolia.blockpi.network/v1/rpc/public",
+  chainId: 421614,
+  accounts: [process.env.KEY_TESTNET!],
+};
+const sepolia: NetworkUserConfig = {
+  url: "https://eth-sepolia.g.alchemy.com/v2/wUAOjtKSS75xfUEZah0k9ODHKHDC5PO0",
+  chainId: 11155111,
+  accounts: [process.env.KEY_TESTNET!],
+};
 const chainIdMap: { [key: string]: string } = {}
 for (const [networkName, networkInfo] of Object.entries(networkInfos)) {
   // @ts-ignore
@@ -25,17 +45,7 @@ for (const [networkName, networkInfo] of Object.entries(networkInfos)) {
 
 const SKIP_LOAD = process.env.SKIP_LOAD === 'true'
 
-// Prevent to load scripts before compilation and typechain
-if (!SKIP_LOAD) {
-  const tasksPath = path.join(__dirname, 'task')
-  if (fs.existsSync(tasksPath)) {
-    fs.readdirSync(tasksPath)
-      .filter((pth) => pth.includes('.ts'))
-      .forEach((task) => {
-        require(`${tasksPath}/${task}`)
-      })
-  }
-}
+// Prevent to load scripts before compilation
 
 let privateKey: string
 let ok: string
@@ -54,7 +64,12 @@ const loadPrivateKeyFromKeyfile = () => {
     }
   }
 
-  const prodNetworks = new Set<number>([networkInfos.mainnet.id, networkInfos.arbitrum.id, networkInfos.base.id])
+  const prodNetworks = new Set<number>([
+    networkInfos.mainnet.id,
+    networkInfos.arbitrum.id,
+    networkInfos.base.id,
+    // networkInfos.zkSync.id,
+  ])
   if (network && prodNetworks.has(network)) {
     if (privateKey) {
       return privateKey
@@ -80,9 +95,19 @@ const config: HardhatConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.8.25',
+        version: '0.8.24',
         settings: {
           evmVersion: 'cancun',
+          optimizer: {
+            enabled: true,
+            runs: 1000,
+          },
+        },
+      },
+      {
+        version: '0.8.23',
+        settings: {
+          evmVersion: 'london',
           optimizer: {
             enabled: true,
             runs: 1000,
@@ -94,67 +119,15 @@ const config: HardhatConfig = {
   },
   defaultNetwork: 'hardhat',
   networks: {
-    [networkInfos.berachainTestnet.id]: {
-      url: networkInfos.berachainTestnet.rpcUrls.default.http[0],
-      chainId: networkInfos.berachainTestnet.id,
-      accounts: process.env.DEV_PRIVATE_KEY ? [process.env.DEV_PRIVATE_KEY] : [],
-      gas: 'auto',
-      gasPrice: 'auto',
-      gasMultiplier: 1,
-      timeout: 3000000,
-      httpHeaders: {},
-      live: true,
-      saveDeployments: true,
-      tags: ['testnet', 'test'],
-      companionNetworks: {},
-    },
-    [networkInfos.arbitrumSepolia.id]: {
-      url: networkInfos.arbitrumSepolia.rpcUrls.default.http[0],
-      chainId: networkInfos.arbitrumSepolia.id,
-      accounts: process.env.DEV_PRIVATE_KEY ? [process.env.DEV_PRIVATE_KEY] : [],
-      gas: 'auto',
-      gasPrice: 'auto',
-      gasMultiplier: 1,
-      timeout: 3000000,
-      httpHeaders: {},
-      live: true,
-      saveDeployments: true,
-      tags: ['testnet', 'test'],
-      companionNetworks: {},
-    },
-    [networkInfos.arbitrum.id]: {
-      url: networkInfos.arbitrum.rpcUrls.default.http[0],
-      chainId: networkInfos.arbitrum.id,
-      accounts: [loadPrivateKeyFromKeyfile()],
-      gas: 'auto',
-      gasPrice: 'auto',
-      gasMultiplier: 1,
-      timeout: 3000000,
-      httpHeaders: {},
-      live: true,
-      saveDeployments: true,
-      tags: ['mainnet', 'prod'],
-      companionNetworks: {},
-    },
-    [networkInfos.base.id]: {
-      url: networkInfos.base.rpcUrls.default.http[0],
-      chainId: networkInfos.base.id,
-      accounts: [loadPrivateKeyFromKeyfile()],
-      gas: 'auto',
-      gasPrice: 'auto',
-      gasMultiplier: 1,
-      timeout: 3000000,
-      httpHeaders: {},
-      live: true,
-      saveDeployments: true,
-      tags: ['mainnet', 'prod'],
-      companionNetworks: {},
-    },
+    ...(process.env.KEY_TESTNET && { mantleSepoliaTestnet }),
+    ...(process.env.KEY_TESTNET && { sepolia }),
+    ...(process.env.KEY_TESTNET && { arbitrumSepolia }),
+  
     hardhat: {
       chainId: networkInfos.hardhat.id,
-      gas: 20000000,
-      gasPrice: 250000000000,
-      gasMultiplier: 1,
+      // gas: 20000000,
+      // gasPrice: 250000000000,
+      gasMultiplier: 1.5,
       // @ts-ignore
       // forking: {
       //   enabled: true,
@@ -206,33 +179,37 @@ const config: HardhatConfig = {
       filter: () => true,
     },
   ],
+  mocha: {
+    timeout: 40000000,
+    require: ['hardhat/register'],
+  },
   // @ts-ignore
   contractSizer: {
     runOnCompile: true,
   },
   etherscan: {
     apiKey: {
-      base: process.env.BASESCAN_API_KEY ?? '',
-      sepolia: process.env.ARBISCAN_API_KEY ?? '',
-      arbitrumSepolia: process.env.ARBISCAN_API_KEY ?? '',
-      [networkInfos.berachainTestnet.id]: 'berachainArtio',
+      mantleSepoliaTestnet: process.env.ETHERSCAN_API_KEY,
+      sepolia: process.env.ETHERSCAN_API_KEY,
+      arbitrumSepolia: process.env.ARBISCAN_API_KEY,
     },
     customChains: [
       {
-        network: networkInfos.berachainTestnet.id.toString(),
-        chainId: networkInfos.berachainTestnet.id,
+        network: 'mantleSepoliaTestnet',
+        chainId: 5003,
         urls: {
-          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80085/etherscan',
-          browserURL: 'https://artio.beratrail.io/',
+          apiURL: 'https://explorer.testnet.mantle.xyz/api',
+          browserURL: 'https://explorer.testnet.mantle.xyz',
         },
-      },
+      }
     ],
     enabled: true,
   },
   sourcify: {
-    // Disabled by default
-    // Doesn't need an API key
+    // Enable Sourcify verification by default
     enabled: true,
+    apiUrl: 'https://sourcify.dev/server',
+    browserUrl: 'https://repo.sourcify.dev',
   },
 }
 

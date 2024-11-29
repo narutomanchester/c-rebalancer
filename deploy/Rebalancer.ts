@@ -7,23 +7,17 @@ import { arbitrum, base } from 'viem/chains'
 
 const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, network } = hre
-  const chain = await getChain(network.provider)
-  const deployer = (await getNamedAccounts())['deployer'] as Address
+  // const chain = await getChain(network.provider)
+  // const deployer = (await getNamedAccounts())['deployer'] as Address
 
   if (await deployments.getOrNull('Rebalancer')) {
     return
   }
 
-  let owner: Address = '0x'
-  if (chain.testnet || isDevelopmentNetwork(chain.id)) {
-    owner = deployer
-  } else if (chain.id === arbitrum.id || chain.id === base.id) {
-    owner = SAFE_WALLET[chain.id] // Safe
-  } else {
-    throw new Error('Unknown chain')
-  }
+ let owner: Address = "0x8381c90a455c162E0aCA3cBE80e7cE5D590C7703"
+  let bookManagerAddress: Address = "0xA3bEab3AeE3d92d629C4B3Fb40ca1b3fFeFE482B"
 
-  await deployWithVerify(hre, 'Rebalancer', [BOOK_MANAGER[chain.id], owner])
+  await deployWithVerify(hre, 'Rebalancer', [bookManagerAddress, owner])
 }
 
 deployFunction.tags = ['Rebalancer']
