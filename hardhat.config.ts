@@ -14,20 +14,18 @@ import '@nomicfoundation/hardhat-verify'
 import 'hardhat-gas-reporter'
 import 'hardhat-contract-sizer'
 import 'hardhat-abi-exporter'
-import '@nomiclabs/hardhat-waffle'
-import '@openzeppelin/hardhat-upgrades'
-
+import "@nomiclabs/hardhat-waffle"
 
 import { HardhatConfig } from 'hardhat/types'
 import * as networkInfos from 'viem/chains'
 
 dotenv.config()
-const mantleSepoliaTestnet: NetworkUserConfig = {
-  url: "https://rpc.sepolia.mantle.xyz",
-  chainId: 5003,
+const sonicTestnet: NetworkUserConfig = {
+  url: "https://rpc.testnet.soniclabs.com",
+  chainId: 64165,
   accounts: [process.env.KEY_TESTNET!],
 };
-const arbitrumSepolia: NetworkUserConfig = {
+const arbSepolia: NetworkUserConfig = {
   url: "https://arbitrum-sepolia.blockpi.network/v1/rpc/public",
   chainId: 421614,
   accounts: [process.env.KEY_TESTNET!],
@@ -46,6 +44,14 @@ for (const [networkName, networkInfo] of Object.entries(networkInfos)) {
 const SKIP_LOAD = process.env.SKIP_LOAD === 'true'
 
 // Prevent to load scripts before compilation
+if (!SKIP_LOAD) {
+  const tasksPath = path.join(__dirname, 'task')
+  fs.readdirSync(tasksPath)
+    .filter((pth) => pth.includes('.ts'))
+    .forEach((task) => {
+      require(`${tasksPath}/${task}`)
+    })
+}
 
 let privateKey: string
 let ok: string
@@ -95,19 +101,9 @@ const config: HardhatConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.8.24',
+        version: '0.8.25',
         settings: {
-          evmVersion: 'cancun',
-          optimizer: {
-            enabled: true,
-            runs: 1000,
-          },
-        },
-      },
-      {
-        version: '0.8.23',
-        settings: {
-          evmVersion: 'london',
+          evmVersion: 'paris',
           optimizer: {
             enabled: true,
             runs: 1000,
@@ -119,9 +115,9 @@ const config: HardhatConfig = {
   },
   defaultNetwork: 'hardhat',
   networks: {
-    ...(process.env.KEY_TESTNET && { mantleSepoliaTestnet }),
+    ...(process.env.KEY_TESTNET && { sonicTestnet }),
     ...(process.env.KEY_TESTNET && { sepolia }),
-    ...(process.env.KEY_TESTNET && { arbitrumSepolia }),
+    ...(process.env.KEY_TESTNET && { arbSepolia }),
   
     hardhat: {
       chainId: networkInfos.hardhat.id,
@@ -189,17 +185,17 @@ const config: HardhatConfig = {
   },
   etherscan: {
     apiKey: {
-      mantleSepoliaTestnet: process.env.ETHERSCAN_API_KEY,
+      sonicTestnet: process.env.ETHERSCAN_API_KEY,
       sepolia: process.env.ETHERSCAN_API_KEY,
       arbitrumSepolia: process.env.ARBISCAN_API_KEY,
     },
     customChains: [
       {
-        network: 'mantleSepoliaTestnet',
-        chainId: 5003,
+        network: 'sonicTestnet',
+        chainId: 64165,
         urls: {
-          apiURL: 'https://explorer.testnet.mantle.xyz/api',
-          browserURL: 'https://explorer.testnet.mantle.xyz',
+          apiURL: 'https://testnet.soniclabs.com/api',
+          browserURL: 'https://testnet.soniclabs.com/',
         },
       }
     ],

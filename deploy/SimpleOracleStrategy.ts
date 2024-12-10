@@ -17,7 +17,7 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
   const rebalancer = await deployments.get('Rebalancer')
 
   let owner: Address = "0x8381c90a455c162E0aCA3cBE80e7cE5D590C7703"
-  let bookManagerAddress: Address = "0xA3bEab3AeE3d92d629C4B3Fb40ca1b3fFeFE482B"
+  let bookManagerAddress: Address = "0xE25611C8aa0A7cEA49fE099d26bf56f720d57874"
   let rebalancerAddress: Address = "0xE3DA7E931581999F2954Ed622e3b9Fa956942019"
   let oracleAddress: Address = "0xC84ce331F8951f141217275B48C79AfD4186a155"
 

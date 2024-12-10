@@ -20,7 +20,7 @@ const deployFunction: DeployFunction = async function (hre: HardhatRuntimeEnviro
   }
 
   let owner: Address = "0x8381c90a455c162E0aCA3cBE80e7cE5D590C7703"
-  let bookManagerAddress: Address = "0xA3bEab3AeE3d92d629C4B3Fb40ca1b3fFeFE482B"
+  let bookManagerAddress: Address = "0xE25611C8aa0A7cEA49fE099d26bf56f720d57874"
   // if (chain.id == base.id) {
   //   owner = SAFE_WALLET[chain.id] // Safe
   // } else if (chain.id == arbitrumSepolia.id) {
